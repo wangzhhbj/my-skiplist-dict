@@ -447,7 +447,7 @@ void skiplist_delete(skipList *sl, hashKeyType hashKey)
 #define new_entry() ((dictEntry*)malloc(sizeof(dictEntry)))
 
 /**
- * @brief add a hash skipNode
+ * @brief add a hash dictEntry
  *
  * @param  dict key val
  *
