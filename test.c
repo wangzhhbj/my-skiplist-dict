@@ -45,9 +45,9 @@ static void callbackValDestructor(void *privdata, void *val) {
 
 
 /**/
-unsigned hash_test(const void * key)
+static uint64_t hash_test(const void * key)
 {
-	return strlen((const char * )key);
+	return (uint64_t)strlen((const char * )key);
 }
 
 
@@ -65,66 +65,66 @@ static dictType callbackDict =
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
 	int ret = 0;
 	unsigned i = 0;
 	unsigned len = 0;
-	unsigned num = 0;
+	unsigned key = 0;
+	int num = 0;
 	char *tmp = NULL;
 	char str[128] = {0};
 	dictEntry * entry = NULL;
 	dict * dt = NULL;
+	
+	if(argc < 2)
+	{
+		printf("please input num, 1 ~ (int)\n");
+		return -1;
+	}
+	
+	num = atoi(argv[1]);
+	if(num < 1)
+	{
+		printf("please input num, 1 ~ (int)\n");
+		return -1;
+	}
 	
 #ifdef USE_TCMALLOC
 	HeapProfilerStart("./mem_heap");
 #endif
 	
 	dt = dict_new(&callbackDict, NULL);
+	printf("dict_new end\n");
 	
-	
-	for(i = 0; i<1000000; i++)
+	for(i = 0; i<num; i++)
 	{
-		num = i;
-		len = snprintf(NULL, 0, "%u", num) + 1;
+		key = i;
+		len = snprintf(NULL, 0, "%u", key) + 1;
 		tmp = malloc(len);
 		if(NULL == tmp)
 		{
 			break;
 		}
 		
-		len = snprintf(tmp, len, "%u", num);
+		len = snprintf(tmp, len, "%u", key);
 		dict_add(dt, tmp, tmp);
-		//printf("dict_add %s---%s\n", tmp, tmp);
 	}
 	
 	printf("dict count:%u\n", dt->count);
 	printf("dict sl level:%u\n", dt->sl->level);
-	
-	//dict_print_str_str(dt);
 
 	/*
-	entry = dict_find(dt, tmp);
-	if(entry != NULL)
-	{
-		printf("find successed: (%s:%s)\n", (char *)entry->key, (char *)entry->v.val);
-	}
-	else
-	{
-		printf("not find\n");
-	}
-	
-	/*
-	snprintf(str, sizeof(str), "%u", num);
+	snprintf(str, sizeof(str), "%u", key);
 	ret = dict_delete(dt, str);
 	printf("delete %s---%d\n", str, ret);
 	*/
 	
-	for(i = 0; i<1000000; i++)
+	for(i = 0; i<num; i++)
 	{
-		num = i;
+		key = i;
 		memset(str, 0, sizeof(str));
-		snprintf(str, sizeof(str), "%u", num);
+		snprintf(str, sizeof(str), "%u", key);
 		
 		entry = dict_find(dt, str);
 		if(NULL == entry)
@@ -132,20 +132,9 @@ int main()
 			printf("not find: (%s)\n", str);
 		}
 	}
-	/**/
 	
 	//dict_print_str_str(dt);
-	/*
-	entry = dict_find(dt, "77235");
-	if(entry != NULL)
-	{
-		printf("find successed: (%s:%s)\n", (char *)entry->key, (char *)entry->v.val);
-	}
-	else
-	{
-		printf("not find\n");
-	}
-	*/
+
 	
 	dict_free(dt);
 	
