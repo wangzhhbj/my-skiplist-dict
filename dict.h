@@ -30,8 +30,8 @@ struct skipList;
 // 用于存放字典列表头的节点
 typedef struct skipNode
 {
-	uint32_t high;              // node height
-	uint32_t count;
+    uint32_t high;              // node height
+    uint32_t count;
     hashKeyType hashKey;        // hash key
     struct dictEntry * pEntry;  // pEntry pointer
     struct skipNode * next[0];  // 后继指针数组，柔性数组 可实现结构体的变长
@@ -41,21 +41,21 @@ typedef struct skipNode
 //跳表结构
 typedef struct skipList
 {
-	int max_lev; /* max level */
-	
+    int max_lev; /* max level */
+    
     int level;// 当前使用的最大层数
-	
-	skipNode * head; /* 弄一个头节点 */
-	
-	/* node 数量 */
-	uint32_t count;
-	
-	/*
-	全局缓存数组，不再额外申请内存了
-	在搜寻指定Key的过程中，保存每一层level的最后一个节点的位置
-	用在删除和插入节点时，对涉及到的节点的指针更新
-	*/
-	skipNode * last[MAX_LEVEL];
+    
+    skipNode * head; /* 弄一个头节点 */
+    
+    /* node 数量 */
+    uint32_t count;
+    
+    /*
+    全局缓存数组，不再额外申请内存了
+    在搜寻指定Key的过程中，保存每一层level的最后一个节点的位置
+    用在删除和插入节点时，对涉及到的节点的指针更新
+    */
+    skipNode * last[MAX_LEVEL];
 } skipList;
 
 
@@ -66,20 +66,20 @@ key 属性保存着键值对中的键， 而 v 属性则保存着键值对中的
 其中键值对的值可以是一个指针， 或者是一个 uint64_t 整数， 又或者是一个 int64_t 整数。
 */
 typedef struct dictEntry {
-	//键
+    //键
     void * key;
-	
-	//值
+    
+    //值
     union {
         void *val;
         uint64_t u64;
         int64_t s64;
         double d;
     } v;
-	
-	// 指向下个哈希表节点，形成链表
+    
+    // 指向下个哈希表节点，形成链表
     struct dictEntry *next;
-	
+    
 } dictEntry;
 
 
@@ -90,22 +90,22 @@ typedef struct dictType {
 
     // 复制键的函数
     void *(*keyDup)(void *privdata, const void *key);
-	
+    
     // 设置值的函数
     void *(*valDup)(void *privdata, const void *obj);
 
-	// 对比键的函数
+    // 对比键的函数
     int (*keyCompare)(void *privdata, const void *key1, const void *key2);
 
     // 销毁键的函数
     void (*keyDestructor)(void *privdata, void *key);
-	
+    
     // 销毁值的函数
     void (*valDestructor)(void *privdata, void *obj);
-	
+    
     // 打印键的函数，调试用
     //void (*keyPrint)(void *privdata, const void *key);
-	
+    
     // 打印值的函数，调试用
     //void (*valPrint)(void *privdata, const void *obj);
 
@@ -114,14 +114,14 @@ typedef struct dictType {
 
 
 typedef struct dict {
-	
-	/* 用于支撑多态字典 */
+    
+    /* 用于支撑多态字典 */
     dictType *type;
     void *privdata;
-	
-	skipList * sl;
-	
-	uint32_t count;
+    
+    skipList * sl;
+    
+    uint32_t count;
 } dict;
 
 
@@ -221,13 +221,13 @@ skipNode *create_node(int level, hashKeyType hashKey, dictEntry * entry)
 {
     skipNode *node = new_node(level);
     if(!node)
-	{
+    {
         return NULL;
-	}
-	node->high = level;
+    }
+    node->high = level;
     node->hashKey = hashKey;
     node->pEntry = entry;
-	node->count = 0;
+    node->count = 0;
     return node;
 }
 
@@ -242,31 +242,31 @@ skipNode *create_node(int level, hashKeyType hashKey, dictEntry * entry)
 skipList * create_skiplist(void)
 {
     int i = 0;
-	skipNode * node = NULL;
+    skipNode * node = NULL;
     skipList * sl = (skipList*)calloc(1, sizeof(skipList));//申请跳表结构内存
     if(NULL == sl)
-	{
+    {
         return NULL;
-	}
+    }
 
     sl->level = 1;// 设置跳表的层level，初始的层为1层（数组从0开始）
-	sl->count = 0;
-	
-	//创建头结点 key 0 
-	node = create_node(MAX_LEVEL, 0, NULL);
+    sl->count = 0;
+    
+    //创建头结点 key 0 
+    node = create_node(MAX_LEVEL, 0, NULL);
     if(NULL == node)
     {
         free(sl);
         return NULL;
     }
     sl->head = node;
-	// 将header的next数组清空
+    // 将header的next数组清空
     for(i=0; i<MAX_LEVEL; ++i)
     {
         node->next[i] = NULL;
     }
 
-	srand(time(0));
+    srand(time(0));
     return sl;
 }
 
@@ -282,9 +282,9 @@ static int random_level(void)
 {
     int level = 1;
     const double p = 0.5;
-	
+    
     while ((random() & 0xffff) < 0xffff * p)
-	{
+    {
             level++;
     }
     return level > MAX_LEVEL ? MAX_LEVEL : level;
@@ -302,25 +302,25 @@ static int random_level(void)
 skipNode *skiplist_find(skipList *sl, hashKeyType hashKey)
 {
     int i = 0;
-	skipNode *beforeNode = sl->head;
-	
-	for (i = sl->level-1; i >= 0; i--)
-	{
-		while ((beforeNode->next[i] != NULL) && 
-		       (beforeNode->next[i]->hashKey < hashKey))
-		{
-			beforeNode = beforeNode->next[i];
-		}
-	}
-	
-	if((beforeNode->next[0] != NULL) && (beforeNode->next[0]->hashKey == hashKey))
-	{
-		return beforeNode->next[0];
-	}
-	else
-	{
-		return NULL;
-	}
+    skipNode *beforeNode = sl->head;
+    
+    for (i = sl->level-1; i >= 0; i--)
+    {
+        while ((beforeNode->next[i] != NULL) && 
+               (beforeNode->next[i]->hashKey < hashKey))
+        {
+            beforeNode = beforeNode->next[i];
+        }
+    }
+    
+    if((beforeNode->next[0] != NULL) && (beforeNode->next[0]->hashKey == hashKey))
+    {
+        return beforeNode->next[0];
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 
@@ -336,54 +336,54 @@ skipNode *skiplist_find(skipList *sl, hashKeyType hashKey)
  */
 skipNode *skiplist_find_or_insert(skipList *sl, hashKeyType hashKey)
 {
-	skipNode *node = NULL;
-	skipNode *beforeNode = sl->head;
+    skipNode *node = NULL;
+    skipNode *beforeNode = sl->head;
     int i = 0;
-	
-	for (i = sl->level-1; i >= 0; i--) {
-		while ((beforeNode->next[i] != NULL) && 
-		       (beforeNode->next[i]->hashKey < hashKey))
-		{
-			beforeNode = beforeNode->next[i];
-		}
-		sl->last[i] = beforeNode;
-	}
-	node = beforeNode->next[0];
-	/* 判断是否有该key的node */
-	if((node != NULL) && (node->hashKey == hashKey))
-	{
-		return node;
-	}
-	
-	/* create skiplist node failed */
-	node = create_node(random_level(), hashKey, NULL);
-	if(NULL == node)
-	{
-		return NULL;
-	}
-	
-	/* update skiplist level */
-	if (node->high > sl->level)
-	{
-		for(i=node->high; i>sl->level; i--)
+    
+    for (i = sl->level-1; i >= 0; i--) {
+        while ((beforeNode->next[i] != NULL) && 
+               (beforeNode->next[i]->hashKey < hashKey))
         {
-			sl->last[i-1] = sl->head;
+            beforeNode = beforeNode->next[i];
+        }
+        sl->last[i] = beforeNode;
+    }
+    node = beforeNode->next[0];
+    /* 判断是否有该key的node */
+    if((node != NULL) && (node->hashKey == hashKey))
+    {
+        return node;
+    }
+    
+    /* create skiplist node failed */
+    node = create_node(random_level(), hashKey, NULL);
+    if(NULL == node)
+    {
+        return NULL;
+    }
+    
+    /* update skiplist level */
+    if (node->high > sl->level)
+    {
+        for(i=node->high; i>sl->level; i--)
+        {
+            sl->last[i-1] = sl->head;
         }
         sl->level = node->high;
     }
-	
-	/* 插入跳表 */
-	// 逐层更新节点的指针,和普通链表插入一样
-	for(i = 0; i < node->high; i++)
-	{
-		node->next[i] = sl->last[i]->next[i];
-		sl->last[i]->next[i] = node;
-	}
-	
-	/* node 数量增加 */
-	sl->count++;
-	
-	return node;
+    
+    /* 插入跳表 */
+    // 逐层更新节点的指针,和普通链表插入一样
+    for(i = 0; i < node->high; i++)
+    {
+        node->next[i] = sl->last[i]->next[i];
+        sl->last[i]->next[i] = node;
+    }
+    
+    /* node 数量增加 */
+    sl->count++;
+    
+    return node;
 }
 
 
@@ -399,27 +399,27 @@ skipNode *skiplist_find_or_insert(skipList *sl, hashKeyType hashKey)
  */
 void skiplist_delete(skipList *sl, hashKeyType hashKey)
 {
-	skipNode *node = NULL;
-	skipNode *beforeNode = sl->head;
+    skipNode *node = NULL;
+    skipNode *beforeNode = sl->head;
     int i = 0;
-	
-	for (i = sl->level-1; i >= 0; i--) {
-		while ((beforeNode->next[i] != NULL) && 
-		       (beforeNode->next[i]->hashKey < hashKey))
-		{
-			beforeNode = beforeNode->next[i];
-		}
-		sl->last[i] = beforeNode;
-	}
-	
-	node = beforeNode->next[0];
-	/* 判断是否有该key的node */
-	if((node != NULL) && (node->hashKey != hashKey))
-	{
-		return;
-	}
-	
-	//逐层删除
+    
+    for (i = sl->level-1; i >= 0; i--) {
+        while ((beforeNode->next[i] != NULL) && 
+               (beforeNode->next[i]->hashKey < hashKey))
+        {
+            beforeNode = beforeNode->next[i];
+        }
+        sl->last[i] = beforeNode;
+    }
+    
+    node = beforeNode->next[0];
+    /* 判断是否有该key的node */
+    if((node != NULL) && (node->hashKey != hashKey))
+    {
+        return;
+    }
+    
+    //逐层删除
     for(i=sl->level-1; i>=0; --i)
     {
         if(sl->last[i]->next[i] == node) //删除节点
@@ -427,18 +427,18 @@ void skiplist_delete(skipList *sl, hashKeyType hashKey)
             sl->last[i]->next[i] = node->next[i];
             //如果删除的是最高层的节点,则level--
             if(sl->head->next[i] == NULL)
-			{
+            {
                 sl->level--;
-			}
+            }
         }
     }
-	
-	/* node数量减少 */
-	sl->count--;
-	
-	free_node(node);
-	
-	return;
+    
+    /* node数量减少 */
+    sl->count--;
+    
+    free_node(node);
+    
+    return;
 }
 
 
@@ -455,58 +455,58 @@ void skiplist_delete(skipList *sl, hashKeyType hashKey)
  */
 dictEntry * dict_add(dict * d, void * key, void * val)
 {
-	skipNode * node = NULL;
-	dictEntry * entry = NULL;
-	dictEntry * * entryPP = NULL;
-	hashKeyType hashKey = dictHashKey(d, key);
-	
-	/* 先从跳表找到索引头，再从链表中查询是否有该值 */
-	node = skiplist_find_or_insert(d->sl, hashKey);
-	if(NULL == node)
+    skipNode * node = NULL;
+    dictEntry * entry = NULL;
+    dictEntry * * entryPP = NULL;
+    hashKeyType hashKey = dictHashKey(d, key);
+    
+    /* 先从跳表找到索引头，再从链表中查询是否有该值 */
+    node = skiplist_find_or_insert(d->sl, hashKey);
+    if(NULL == node)
     {
         return NULL;
     }
-	
-	/* 从头找位置 */
-	entryPP = &(node->pEntry);
-	for( entry = node->pEntry; entry != NULL; entry = entry->next)
-	{
-		/* 找到了 */
-		if( dictCompareKeys(d, entry->key, key) )
-		{
-			break;
-		}
-		entryPP = &(entry->next);
-	}
-	
-	/* key entry 存在，修改值 */
-	if(entry != NULL)
-	{
-		dictFreeVal(d, entry);
-		dictSetVal(d, entry, val);
-		return entry;
-	}
-	
-	/* key entry 不存在 ， 新建 */
-	entry = new_entry();
-	if(NULL == entry)
-	{
-		return NULL;
-	}
-	
-	entry->next = NULL;
-	dictSetKey(d, entry, key);
-	dictSetVal(d, entry, val);
-	
-	*entryPP = entry;
-	
-	/* 该node索引的entry增加 */
-	node->count++;
-	
-	/* entry数量增加 */
-	d->count++;
-	
-	return entry;
+    
+    /* 从头找位置 */
+    entryPP = &(node->pEntry);
+    for( entry = node->pEntry; entry != NULL; entry = entry->next)
+    {
+        /* 找到了 */
+        if( dictCompareKeys(d, entry->key, key) )
+        {
+            break;
+        }
+        entryPP = &(entry->next);
+    }
+    
+    /* key entry 存在，修改值 */
+    if(entry != NULL)
+    {
+        dictFreeVal(d, entry);
+        dictSetVal(d, entry, val);
+        return entry;
+    }
+    
+    /* key entry 不存在 ， 新建 */
+    entry = new_entry();
+    if(NULL == entry)
+    {
+        return NULL;
+    }
+    
+    entry->next = NULL;
+    dictSetKey(d, entry, key);
+    dictSetVal(d, entry, val);
+    
+    *entryPP = entry;
+    
+    /* 该node索引的entry增加 */
+    node->count++;
+    
+    /* entry数量增加 */
+    d->count++;
+    
+    return entry;
 }
 
 
@@ -522,30 +522,30 @@ dictEntry * dict_add(dict * d, void * key, void * val)
  */
 dictEntry * dict_find(dict * d, void * key)
 {
-	skipNode * node = NULL;
-	dictEntry * entry = NULL;
-	hashKeyType hashKey = dictHashKey(d, key);
-	
-	/* 先从跳表找到索引头，再从链表中查询是否有该值 */
-	
-	/* 找到索引头 */
-	node = skiplist_find(d->sl, hashKey);
-	if(NULL == node)
+    skipNode * node = NULL;
+    dictEntry * entry = NULL;
+    hashKeyType hashKey = dictHashKey(d, key);
+    
+    /* 先从跳表找到索引头，再从链表中查询是否有该值 */
+    
+    /* 找到索引头 */
+    node = skiplist_find(d->sl, hashKey);
+    if(NULL == node)
     {
         return NULL;
     }
-	
-	/* 从头找位置 */
-	for( entry = node->pEntry; entry != NULL; entry = entry->next)
-	{
-		/* 找到了 */
-		if( dictCompareKeys(d, entry->key, key))
-		{
-			break;
-		}
-	}
-	
-	return entry;
+    
+    /* 从头找位置 */
+    for( entry = node->pEntry; entry != NULL; entry = entry->next)
+    {
+        /* 找到了 */
+        if( dictCompareKeys(d, entry->key, key))
+        {
+            break;
+        }
+    }
+    
+    return entry;
 }
 
 
@@ -560,80 +560,80 @@ dictEntry * dict_find(dict * d, void * key)
  */
 int dict_delete(dict * d, void * key)
 {
-	int i = 0;
-	dictEntry * entry = NULL;
-	dictEntry * * entryPP = NULL;
-	skipNode * beforeNode = d->sl->head;
-	skipNode * node = NULL;
-	hashKeyType hashKey = dictHashKey(d, key);
-	
-	for (i = d->sl->level-1; i >= 0; i--)
-	{
-		while ((beforeNode->next[i] != NULL) && 
-		       (beforeNode->next[i]->hashKey < hashKey))
-		{
-			beforeNode = beforeNode->next[i];
-		}
-		d->sl->last[i] = beforeNode;
-	}
-	
-	if((beforeNode->next[0] != NULL) && (beforeNode->next[0]->hashKey == hashKey))
-	{
-		node = beforeNode->next[0];
-	}
-	else
+    int i = 0;
+    dictEntry * entry = NULL;
+    dictEntry * * entryPP = NULL;
+    skipNode * beforeNode = d->sl->head;
+    skipNode * node = NULL;
+    hashKeyType hashKey = dictHashKey(d, key);
+    
+    for (i = d->sl->level-1; i >= 0; i--)
+    {
+        while ((beforeNode->next[i] != NULL) && 
+               (beforeNode->next[i]->hashKey < hashKey))
+        {
+            beforeNode = beforeNode->next[i];
+        }
+        d->sl->last[i] = beforeNode;
+    }
+    
+    if((beforeNode->next[0] != NULL) && (beforeNode->next[0]->hashKey == hashKey))
+    {
+        node = beforeNode->next[0];
+    }
+    else
     {
         return NO_ENTRY;
     }
-	
-	/* 从头找位置 */
-	entryPP = &(node->pEntry);
-	for( entry = node->pEntry; entry != NULL; entry = entry->next)
-	{
-		/* 找到了 */
-		if( dictCompareKeys(d, entry->key, key) )
-		{
-			break;
-		}
-		entryPP = &(entry->next);
-	}
-	
-	if(NULL == entry)
-	{
-		return NO_ENTRY;
-	}
-	
-	/* delete entry */
-	*entryPP = entry->next;
-	node->count--;
-	if(0 == node->count)
-	{
-		//逐层删除
-		for(i=d->sl->level-1; i>=0; --i)
-		{
-			if(d->sl->last[i]->next[i] == node) //删除节点
-			{
-				d->sl->last[i]->next[i] = node->next[i];
-				//如果删除的是最高层的节点,则level--
-				if(d->sl->head->next[i] == NULL)
-				{
-					d->sl->level--;
-				}
-			}
-		}
-		
-		/* node数量减少 */
-		d->sl->count--;
-		free_node(node);
-	}
-	
-	d->count--;
-	
-	dictFreeKey(d, entry);
-	dictFreeVal(d, entry);
-	free(entry);
-	
-	return DICT_OK;
+    
+    /* 从头找位置 */
+    entryPP = &(node->pEntry);
+    for( entry = node->pEntry; entry != NULL; entry = entry->next)
+    {
+        /* 找到了 */
+        if( dictCompareKeys(d, entry->key, key) )
+        {
+            break;
+        }
+        entryPP = &(entry->next);
+    }
+    
+    if(NULL == entry)
+    {
+        return NO_ENTRY;
+    }
+    
+    /* delete entry */
+    *entryPP = entry->next;
+    node->count--;
+    if(0 == node->count)
+    {
+        //逐层删除
+        for(i=d->sl->level-1; i>=0; --i)
+        {
+            if(d->sl->last[i]->next[i] == node) //删除节点
+            {
+                d->sl->last[i]->next[i] = node->next[i];
+                //如果删除的是最高层的节点,则level--
+                if(d->sl->head->next[i] == NULL)
+                {
+                    d->sl->level--;
+                }
+            }
+        }
+        
+        /* node数量减少 */
+        d->sl->count--;
+        free_node(node);
+    }
+    
+    d->count--;
+    
+    dictFreeKey(d, entry);
+    dictFreeVal(d, entry);
+    free(entry);
+    
+    return DICT_OK;
 }
 
 
@@ -651,14 +651,14 @@ dict *dict_new(dictType *type, void *privDataPtr)
     d->type = type;
     d->privdata = privDataPtr;
     d->count = 0;
-	
-	d->sl = create_skiplist();
-	if(NULL == d->sl)
-	{
-		free(d);
-		d = NULL;
-	}
-	
+    
+    d->sl = create_skiplist();
+    if(NULL == d->sl)
+    {
+        free(d);
+        d = NULL;
+    }
+    
     return d;
 }
 
@@ -673,44 +673,44 @@ dict *dict_new(dictType *type, void *privDataPtr)
  */
 void dict_free(dict *d)
 {
-	dictEntry * entry = NULL;
-	dictEntry * entryNext = NULL;
+    dictEntry * entry = NULL;
+    dictEntry * entryNext = NULL;
     skipNode *node = NULL;
-	skipNode *nodeNext = NULL;
+    skipNode *nodeNext = NULL;
     if(!d)
-	{
-        return;
-	}
-	
-	if(!d->sl)
-	{
-		return;
-	}
-	
-    node = d->sl->head;
-	while(node)
     {
-		nodeNext = node->next[0];
-		
-		entry = node->pEntry;
-		while(entry != NULL)
-		{
-			entryNext = entry->next;
-			dictFreeKey(d, entry);
-			dictFreeVal(d, entry);
-			free(entry);
-			entry = entryNext;
-		}
-		
-		free(node);
-		node = nodeNext;
+        return;
     }
-	
+    
+    if(!d->sl)
+    {
+        return;
+    }
+    
+    node = d->sl->head;
+    while(node)
+    {
+        nodeNext = node->next[0];
+        
+        entry = node->pEntry;
+        while(entry != NULL)
+        {
+            entryNext = entry->next;
+            dictFreeKey(d, entry);
+            dictFreeVal(d, entry);
+            free(entry);
+            entry = entryNext;
+        }
+        
+        free(node);
+        node = nodeNext;
+    }
+    
     free(d->sl);
-	
-	free(d);
-	
-	return;
+    
+    free(d);
+    
+    return;
 }
 
 
@@ -725,33 +725,33 @@ void dict_free(dict *d)
  */
 void dict_print_str_str(dict * d)
 {
-	skipNode * node = NULL;
-	dictEntry * entry = NULL;
-	int i;
+    skipNode * node = NULL;
+    dictEntry * entry = NULL;
+    int i;
 
-	printf("total Level: %d, nums: %u\n", d->sl->level, d->count);
-	for (i = 0; i < d->sl->level; i++)
-	{
-		node = d->sl->head->next[i];
-		printf("Level[%d]:", i);
+    printf("total Level: %d, nums: %u\n", d->sl->level, d->count);
+    for (i = 0; i < d->sl->level; i++)
+    {
+        node = d->sl->head->next[i];
+        printf("Level[%d]:", i);
 
-		while (node)
-		{
-			printf("%lu {\n", node->hashKey);
-			
-			entry = node->pEntry;
-			while(entry != NULL)
-			{
-				printf("(%s : %s) \n", (char *)entry->key, (char *)entry->v.val);
-				entry = entry->next;
-			}
-			
-			printf("} -> ");
-			
-			node = node->next[i];
-		}
-		printf("\n\n");
-	}
+        while (node)
+        {
+            printf("%lu {\n", node->hashKey);
+            
+            entry = node->pEntry;
+            while(entry != NULL)
+            {
+                printf("(%s : %s) \n", (char *)entry->key, (char *)entry->v.val);
+                entry = entry->next;
+            }
+            
+            printf("} -> ");
+            
+            node = node->next[i];
+        }
+        printf("\n\n");
+    }
 }
 
 
